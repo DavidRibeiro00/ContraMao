@@ -21,6 +21,8 @@
 <script type="module">
     import * as THREE from 'three'
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+
 
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(
@@ -36,6 +38,264 @@
     document.body.appendChild(renderer.domElement);
 
     const controls = new OrbitControls(camera, renderer.domElement)
+
+    let cube;
+    let carEnemy
+    let platform;
+    const enemies = [];
+
+    const loader = new GLTFLoader();
+
+    loader.load('assets/Motorcycle.glb', function (gltf) {
+        gltf.scene.traverse(function (child) {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
+
+        cube = gltf.scene;
+        cube.scale.set(0.05, 0.06, 0.06); // Scale the model down
+        cube.position.y = 0; // Adjust model position
+        cube.rotation.y = Math.PI; // Rotate the model 180 degrees around the y-axis
+        cube.velocity = { x: 0, y: 0, z: 0 }; // Add velocity property to the GLTF model
+        cube.collision = false; // Add collision property to the GLTF model
+        cube.gravity = -0.008; // Add gravity property to the GLTF model
+
+        cube.applyGravity = function() {
+            this.velocity.y += this.gravity;
+
+            if(boxCollision({box1: this, box2:platform, bottom:true})){
+                this.velocity.y *= 0.8;
+                this.velocity.y = -this.velocity.y;
+            } else this.position.y += this.velocity.y
+        };
+        scene.add(cube);
+    }, undefined, function (error) {
+        console.error(error);
+    });
+
+    const platformLoader = new GLTFLoader();
+    platformLoader.load('assets/Road-Piece-Straight.glb', function (gltf) {
+        gltf.scene.traverse(function (child) {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
+
+        platform = gltf.scene;
+        platform.scale.set(12, 5, 10); // Scale the model
+        platform.position.y = -2; // Adjust model position
+        platform.position.z = -10;
+
+        scene.add(platform);
+
+        // CAR ENEMY
+        const carLoader = new GLTFLoader();
+        carLoader.load('assets/Car.glb', function (gltf) {
+            gltf.scene.traverse(function (child) {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+
+            carEnemy = gltf.scene;
+            carEnemy.scale.set(1, 1, 1); // Scale the model down
+            carEnemy.position.z = -14;
+            carEnemy.position.y = platform.position.y + carEnemy.scale.y / 2; // Spawn on top of the platform
+            carEnemy.position.x = Math.random() * platform.scale.x - platform.scale.x / 2;
+            carEnemy.velocity = { x: 0, y: 0, z: 0.08 }; // Add velocity property to the GLTF model
+            carEnemy.gravity = -0.008; // Add gravity property to the GLTF model
+
+            carEnemy.applyGravity = function() {
+                this.velocity.y += this.gravity;
+
+                if(boxCollision({box1: this, box2:platform, bottom:true})){
+                    this.velocity.y *= 0.8;
+                    this.velocity.y = -this.velocity.y;
+                } else this.position.y += this.velocity.y
+            };
+
+            carEnemy.update = function(group) {
+                this.position.x += this.velocity.x;
+                this.position.z += this.velocity.z;
+
+                this.applyGravity();
+            };
+
+            scene.add(carEnemy);
+            enemies.push(carEnemy); // Add the car to the enemies array
+        }, undefined, function (error) {
+            console.error(error);
+        });
+
+        // PICKUP TRUCK ENEMY
+        const pickupLoader = new GLTFLoader();
+        carLoader.load('assets/Pickup-Truck.glb', function (gltf) {
+            gltf.scene.traverse(function (child) {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+
+            carEnemy = gltf.scene;
+            carEnemy.scale.set(1, 1, 1); // Scale the model down
+            carEnemy.position.z = -14;
+            carEnemy.position.y = platform.position.y + carEnemy.scale.y / 2; // Spawn on top of the platform
+            carEnemy.position.x = Math.random() * platform.scale.x - platform.scale.x / 2;
+            carEnemy.velocity = { x: 0, y: 0, z: 0.07 }; // Add velocity property to the GLTF model
+            carEnemy.gravity = -0.008; // Add gravity property to the GLTF model
+
+            carEnemy.applyGravity = function() {
+                this.velocity.y += this.gravity;
+
+                if(boxCollision({box1: this, box2:platform, bottom:true})){
+                    this.velocity.y *= 0.8;
+                    this.velocity.y = -this.velocity.y;
+                } else this.position.y += this.velocity.y
+            };
+
+            carEnemy.update = function(group) {
+                this.position.x += this.velocity.x;
+                this.position.z += this.velocity.z;
+
+                this.applyGravity();
+            };
+
+            scene.add(carEnemy);
+            enemies.push(carEnemy); // Add the car to the enemies array
+        }, undefined, function (error) {
+            console.error(error);
+        });
+
+        // POLICE CAR ENEMY
+        const policeLoader = new GLTFLoader();
+        carLoader.load('assets/Police-Car.glb', function (gltf) {
+            gltf.scene.traverse(function (child) {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+
+            carEnemy = gltf.scene;
+            carEnemy.scale.set(1, 1, 1); // Scale the model down
+            carEnemy.position.z = -14;
+            carEnemy.position.y = platform.position.y + carEnemy.scale.y / 2; // Spawn on top of the platform
+            carEnemy.position.x = Math.random() * platform.scale.x - platform.scale.x / 2;
+            carEnemy.velocity = { x: 0, y: 0, z: 0.1 }; // Add velocity property to the GLTF model
+            carEnemy.gravity = -0.008; // Add gravity property to the GLTF model
+
+            carEnemy.applyGravity = function() {
+                this.velocity.y += this.gravity;
+
+                if(boxCollision({box1: this, box2:platform, bottom:true})){
+                    this.velocity.y *= 0.8;
+                    this.velocity.y = -this.velocity.y;
+                } else this.position.y += this.velocity.y
+            };
+
+            carEnemy.update = function(group) {
+                this.position.x += this.velocity.x;
+                this.position.z += this.velocity.z;
+
+                this.applyGravity();
+            };
+
+            scene.add(carEnemy);
+            enemies.push(carEnemy); // Add the car to the enemies array
+        }, undefined, function (error) {
+            console.error(error);
+        });
+
+        // SPORTS CAR ENEMY
+        const sportsLoader = new GLTFLoader();
+        carLoader.load('assets/Sports-Car.glb', function (gltf) {
+            gltf.scene.traverse(function (child) {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+
+            carEnemy = gltf.scene;
+            carEnemy.scale.set(1, 1, 1); // Scale the model down
+            carEnemy.position.z = -14;
+            carEnemy.position.y = platform.position.y + carEnemy.scale.y / 2; // Spawn on top of the platform
+            carEnemy.position.x = Math.random() * platform.scale.x - platform.scale.x / 2;
+            carEnemy.velocity = { x: 0, y: 0, z: 0.12 }; // Add velocity property to the GLTF model
+            carEnemy.gravity = -0.008; // Add gravity property to the GLTF model
+
+            carEnemy.applyGravity = function() {
+                this.velocity.y += this.gravity;
+
+                if(boxCollision({box1: this, box2:platform, bottom:true})){
+                    this.velocity.y *= 0.8;
+                    this.velocity.y = -this.velocity.y;
+                } else this.position.y += this.velocity.y
+            };
+
+            carEnemy.update = function(group) {
+                this.position.x += this.velocity.x;
+                this.position.z += this.velocity.z;
+
+                this.applyGravity();
+            };
+
+            scene.add(carEnemy);
+            enemies.push(carEnemy); // Add the car to the enemies array
+        }, undefined, function (error) {
+            console.error(error);
+        });
+
+        // TRUCK ENEMY
+        const truckLoader = new GLTFLoader();
+        carLoader.load('assets/Truck.glb', function (gltf) {
+            gltf.scene.traverse(function (child) {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+
+            carEnemy = gltf.scene;
+            carEnemy.scale.set(1, 1, 1); // Scale the model down
+            carEnemy.position.z = -14;
+            carEnemy.position.y = platform.position.y + carEnemy.scale.y / 2; // Spawn on top of the platform
+            carEnemy.position.x = Math.random() * platform.scale.x - platform.scale.x / 2;
+            carEnemy.velocity = { x: 0, y: 0, z: 0.06 }; // Add velocity property to the GLTF model
+            carEnemy.gravity = -0.008; // Add gravity property to the GLTF model
+
+            carEnemy.applyGravity = function() {
+                this.velocity.y += this.gravity;
+
+                if(boxCollision({box1: this, box2:platform, bottom:true})){
+                    this.velocity.y *= 0.8;
+                    this.velocity.y = -this.velocity.y;
+                } else this.position.y += this.velocity.y
+            };
+
+            carEnemy.update = function(group) {
+                this.position.x += this.velocity.x;
+                this.position.z += this.velocity.z;
+
+                this.applyGravity();
+            };
+
+            scene.add(carEnemy);
+            enemies.push(carEnemy); // Add the car to the enemies array
+        }, undefined, function (error) {
+            console.error(error);
+        });
+
+    }, undefined, function (error) {
+        console.error(error);
+    });
+
+
 
     class Box extends THREE.Mesh {
         constructor({
@@ -92,7 +352,6 @@
             const yCollision = this.bottom >= platform.top && this.top <= platform.bottom;
             const zCollision = this.front >= platform.back && this.back <= platform.front;
             if(xCollision && yCollision && zCollision){
-                console.log("Collision")
             }
 
             this.applyGravity();
@@ -101,47 +360,23 @@
         applyGravity(){
             this.velocity.y += this.gravity;
 
-            if(boxCollision({box1: this, box2:platform})){
+            if(boxCollision({box1: this, box2:platform, bottom:true})){
                 this.velocity.y *= 0.8;
                 this.velocity.y = -this.velocity.y;
             } else this.position.y += this.velocity.y
         }
     }
 
-    function boxCollision({box1, box2}){
-        const xCollision = box1.right >= box2.left && box1.left <= box2.right;
-        const yCollision = box1.bottom + box1.velocity.y <= box2.top && box1.top >= box2.bottom;
-        const zCollision = box1.front >= box2.back && box1.back <= box2.front;
+    function boxCollision({box1, box2, front = false, back = false, left = false, right = false, top = false, bottom = false}){
+        const hitbox1 = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+        const hitbox2 = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
 
-        return xCollision && yCollision && zCollision
+        hitbox1.setFromObject(box1);
+        hitbox2.setFromObject(box2);
+
+        return hitbox1.intersectsBox(hitbox2);
     }
 
-    const cube = new Box({
-        width: 1,
-        height: 1,
-        depth: 1,
-        velocity: {
-            x: 0,
-            y: -0.05,
-            z: 0
-        }
-    });
-    cube.castShadow = true;
-    scene.add(cube);
-
-    const platform = new Box({
-        width: 5,
-        height: 0.5,
-        depth: 10,
-        color: 'blue',
-        position:{
-            x: 0,
-            y: -2,
-            z: 0
-        }
-    });
-    platform.receiveShadow = true;
-    scene.add(platform);
 
     const light = new THREE.DirectionalLight('white', 1);
     light.position.y = 3;
@@ -200,49 +435,107 @@
         }
     })
 
-    const enemy = new Box({
-        width: 1,
-        height: 1,
-        depth: 1,
-        position: {
-            x: 0,
-            y: 0,
-            z: -4
-        },
-        velocity: {
-            x: 0,
-            y: 0,
-            z: 0.01
-        },
-        color: 'red'
-    });
-    enemy.castShadow = true;
-    scene.add(enemy)
-
-    const enemies = [enemy];
-
-
+    scene.background = new THREE.Color(0x0000ff); // Set background color to blue
 
     function animate() {
         requestAnimationFrame(animate);
         renderer.render(scene, camera);
 
-        cube.velocity.x = 0;
-        cube.velocity.z = 0;
-        if(keys.a.pressed)
-            cube.velocity.x = -0.01;
-        else if(keys.d.pressed)
-            cube.velocity.x = 0.01;
-        else if(keys.w.pressed)
-            cube.velocity.z = -0.01;
-        else if(keys.s.pressed)
-            cube.velocity.z = 0.01;
+        if(cube && platform){
+            console.log("cube set")
+            cube.collision = false; // Reset collision flag at the start of each frame
 
-        cube.update(platform)
 
-        enemies.forEach(enemy => {
-            enemy.update(platform)
-        })
+            if (keys.a.pressed)
+                cube.velocity.x = -0.03;
+            else if (keys.d.pressed)
+                cube.velocity.x = 0.03;
+            else
+                cube.velocity.x = 0.00;
+            if (keys.w.pressed)
+                cube.velocity.z = -0.02;
+            else if (keys.s.pressed)
+                cube.velocity.z = 0.02;
+            else
+                cube.velocity.z = 0.00;
+
+            enemies.forEach((enemy, index) => {
+                if (enemy.update) {
+                    enemy.update(platform);
+                }
+
+
+
+                if (boxCollision({box1: cube, box2: enemy})) {
+                    if (cube.position.z > enemy.position.z) {
+                        // force player back
+                        cube.velocity.z = 0.02;
+                        cube.collision = true;
+                    }
+                    if (cube.position.x < enemy.position.x) {
+                        // force enemy to the right
+                        console.log('collision right')
+                        enemy.velocity.x = 0.02;
+                        cube.velocity.x = 0;
+                        cube.collision = true;
+                    } else if (cube.position.x > enemy.position.x) {
+                        // force enemy to the left
+                        console.log('collision left')
+                        enemy.velocity.x = -0.02;
+                        cube.velocity.x = 0;
+                    }
+                }
+
+                // Check for collisions with other enemies
+                for (let i = index + 1; i < enemies.length; i++) {
+                    const otherEnemy = enemies[i];
+                    if (boxCollision({box1: enemy, box2: otherEnemy})) {
+                        // If there is a collision, adjust the velocities of the enemies
+                        if (enemy.position.x < otherEnemy.position.x) {
+                            // force enemy to the right
+                            enemy.velocity.x = -0.02;
+                            otherEnemy.velocity.x = 0.02;
+                        } else if (enemy.position.x > otherEnemy.position.x) {
+                            // force enemy to the left
+                            enemy.velocity.x = 0.02;
+                            otherEnemy.velocity.x = -0.02;
+                        }
+                    }
+                }
+
+                const platformBottom = platform.position.y - platform.scale.y / 2;
+
+                // If enemy has fallen off the platform, respawn it at the start with a random x value
+                if (enemy.position.y < platformBottom) {
+                    enemy.position.z = platform.position.z + enemy.scale.z / 2 - 10;
+                    enemy.position.y = platform.position.y + enemy.scale.y; // Spawn on top of the platform
+                    enemy.position.x = Math.random() * platform.scale.x - platform.scale.x / 2;
+                }
+
+                // If there is no collision, reset the velocity of the enemies
+                if (!cube.collision) {
+                    enemy.velocity.x = 0;
+                }
+
+                // Check if the bike has fallen off the platform
+                if (cube.position.y < platformBottom) {
+                    // If the bike has fallen off, show the game over message
+                    document.getElementById('game-over').style.display = 'block';
+                }
+
+
+            })
+
+            if (cube.collision)
+                cube.velocity.z = 0.03;
+
+            cube.position.x += cube.velocity.x;
+            cube.position.z += cube.velocity.z;
+            cube.position.y += cube.velocity.y;
+
+            cube.applyGravity();
+        }
     }
     animate()
 </script>
+<div id="game-over" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 3em; font-weight: bold; color: red;">GAME OVER!! Refresh the page to try again!</div>
